@@ -37,7 +37,7 @@
       "options": {
         "targetName": "test"
       },
-      "exclude": ["apps/nutrabiotics-system-e2e/**/*"]
+      "exclude": ["apps/nutrabiotics-system-e2e/**/*", "api-e2e/**/*"]
     }
   ]
 }

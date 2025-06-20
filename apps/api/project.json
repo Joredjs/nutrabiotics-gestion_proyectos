@@ -1,7 +1,7 @@
 {
-  "name": "nutrabiotics-system",
+  "name": "api",
   "$schema": "../../node_modules/nx/schemas/project-schema.json",
-  "sourceRoot": "apps/nutrabiotics-system/src",
+  "sourceRoot": "apps/api/src",
   "projectType": "application",
   "tags": [],
   "targets": {
@@ -23,15 +23,15 @@
       "defaultConfiguration": "development",
       "dependsOn": ["build"],
       "options": {
-        "buildTarget": "nutrabiotics-system:build",
+        "buildTarget": "api:build",
         "runBuildTargetDependencies": false
       },
       "configurations": {
         "development": {
-          "buildTarget": "nutrabiotics-system:build:development"
+          "buildTarget": "api:build:development"
         },
         "production": {
-          "buildTarget": "nutrabiotics-system:build:production"
+          "buildTarget": "api:build:production"
         }
       }
     },
