@@ -7,3 +7,7 @@ Prueba técnica para Nutrabiotics, usando nx como gestor de monorepo
 ### api
 
 Backend en nestjs
+
+### web
+
+Frontend en Reactjs
