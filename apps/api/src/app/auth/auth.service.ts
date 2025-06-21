@@ -9,23 +9,23 @@ import {
   RegisterDto,
   AuthTokens,
   AuthUser,
-  User
+  User,
+  CreateUserDto,
 } from '@nutrabiotics-system/shared-types';
 
 @Injectable()
 export class AuthService {
-
   constructor(
     private prisma: PrismaService,
     private jwtService: JwtService,
     private configService: ConfigService,
-    private usersService: UsersService,
+    private usersService: UsersService
   ) {}
 
   async validateUser(email: string, password: string): Promise<User | null> {
     const user = await this.usersService.findByEmail(email);
 
-    if (user && await bcrypt.compare(password, user.password)) {
+    if (user && (await bcrypt.compare(password, user.password))) {
       const { password: _, ...result } = user;
       return result as User;
     }
@@ -56,7 +56,6 @@ export class AuthService {
   }
 
   async register(registerDto: RegisterDto): Promise<AuthUser> {
-
     if (registerDto.password !== registerDto.confirmPassword) {
       throw new ConflictException('Las contraseñas no coinciden');
     }
@@ -64,7 +63,9 @@ export class AuthService {
     const existingUser = await this.usersService.findByEmail(registerDto.email);
 
     if (existingUser) {
-      throw new ConflictException('Ya existe un usuario con este correo electrónico');
+      throw new ConflictException(
+        'Ya existe un usuario con este correo electrónico'
+      );
     }
 
     const hashedPassword = await bcrypt.hash(registerDto.password, 12);
@@ -74,16 +75,14 @@ export class AuthService {
       email: registerDto.email,
       password: hashedPassword,
       role: 'DEVELOPER' as const,
-    };
+    } as CreateUserDto;
 
     const user = await this.usersService.create(userData);
     const tokens = await this.generateTokens(user.id, user.email);
     await this.storeRefreshToken(user.id, tokens.refreshToken);
 
-    const { password: _, ...userWithoutPassword } = user;
-
     return {
-      user: userWithoutPassword as User,
+      user: user as User,
       tokens,
     };
   }
@@ -91,7 +90,10 @@ export class AuthService {
   async refreshTokens(refreshToken: string): Promise<AuthTokens> {
     try {
       const payload = this.jwtService.verify(refreshToken, {
-        secret: this.configService.get('JWT_REFRESH_SECRET', 'jwt-refresh-secret-dev'),
+        secret: this.configService.get(
+          'JWT_REFRESH_SECRET',
+          'jwt-refresh-secret-dev'
+        ),
       });
 
       const storedToken = await this.prisma.refreshToken.findUnique({
@@ -131,7 +133,10 @@ export class AuthService {
     });
   }
 
-  private async generateTokens(userId: string, email: string): Promise<AuthTokens> {
+  private async generateTokens(
+    userId: string,
+    email: string
+  ): Promise<AuthTokens> {
     const payload = { sub: userId, email };
 
     const [accessToken, refreshToken] = await Promise.all([
@@ -140,7 +145,10 @@ export class AuthService {
         expiresIn: '15m',
       }),
       this.jwtService.signAsync(payload, {
-        secret: this.configService.get('JWT_REFRESH_SECRET', 'jwt-refresh-secret-dev'),
+        secret: this.configService.get(
+          'JWT_REFRESH_SECRET',
+          'jwt-refresh-secret-dev'
+        ),
         expiresIn: '7d',
       }),
     ]);
@@ -151,7 +159,10 @@ export class AuthService {
     };
   }
 
-  private async storeRefreshToken(userId: string, refreshToken: string): Promise<void> {
+  private async storeRefreshToken(
+    userId: string,
+    refreshToken: string
+  ): Promise<void> {
     const expiresAt = new Date();
     expiresAt.setDate(expiresAt.getDate() + 1);
 

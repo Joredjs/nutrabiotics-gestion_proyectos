@@ -3,8 +3,8 @@
 import { BaseEntity, BaseCreateDto, BaseUpdateDto  } from './base.types';
 
 export enum UserRole {
-  ADMIN = 'admin',
-  MANAGER = 'manager',
+  ADMIN = 'ADMIN',
+  MANAGER = 'MANAGER',
   DEVELOPER = 'DEVELOPER',
 }
 
