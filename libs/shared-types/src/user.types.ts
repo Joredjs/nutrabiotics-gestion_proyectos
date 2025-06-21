@@ -5,7 +5,7 @@ import { BaseEntity, BaseCreateDto, BaseUpdateDto  } from './base.types';
 export enum UserRole {
   ADMIN = 'admin',
   MANAGER = 'manager',
-  DEVELOPER = 'developer',
+  DEVELOPER = 'DEVELOPER',
 }
 
 export interface User extends BaseEntity {

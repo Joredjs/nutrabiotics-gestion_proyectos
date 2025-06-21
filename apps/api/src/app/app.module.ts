@@ -1,6 +1,9 @@
 import { Module } from '@nestjs/common';
 import { ConfigModule } from '@nestjs/config';
 import { AuthModule } from './auth/auth.module';
+import { UsersModule } from './users/users.module';
+import { ProjectsModule } from './projects/projects.module';
+import { TasksModule } from './tasks/tasks.module';
 import { DatabaseModule } from './db/db.module';
 
 @Module({
@@ -11,6 +14,9 @@ import { DatabaseModule } from './db/db.module';
     }),
     DatabaseModule,
     AuthModule,
+    UsersModule,
+    ProjectsModule,
+    TasksModule,
   ],
 })
 export class AppModule {}

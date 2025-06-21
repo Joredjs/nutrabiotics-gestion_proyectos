@@ -5,17 +5,16 @@ import { User } from './user.types';
 import { Task } from './task.types';
 
 export enum ProjectStatus {
-  PLANNING = 'Planeado',
-  IN_PROGRESS = 'En Progreso',
-  COMPLETED = 'Completado',
-  CANCELLED = 'Cancelado',
-  ON_HOLD = 'En Espera',
+  PLANNING = 'PLANNING',
+  IN_PROGRESS = 'IN_PROGRESS',
+  COMPLETED = 'COMPLETED',
+  CANCELLED = 'CANCELLED',
 }
 
 export enum Priority {
-  LOW = 'bajo',
-  MEDIUM = 'medio',
-  HIGH = 'alta',
+  LOW = 'LOW',
+  MEDIUM = 'MEDIUM',
+  HIGH = 'HIGH',
 }
 
 export interface Project extends BaseEntity {
