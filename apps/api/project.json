@@ -5,15 +5,58 @@
   "projectType": "application",
   "tags": [],
   "targets": {
-    "build": {
-      "executor": "nx:run-commands",
+    "lint": {
+      "dependsOn": ["^lint"],
+      "cache": true,
+      "executor": "@nx/eslint:lint",
+      "outputs": ["{options.outputFile}"],
       "options": {
-        "command": "webpack-cli build",
-        "args": ["node-env=production"]
+        "lintFilePatterns": ["{projectRoot}/src/**/*.ts"],
+        "fix": true,
+        "outputFile": "{workspaceRoot}/results/{projectName}/lint.html",
+        "format": "html"
+      }
+    },
+    "test": {
+      "dependsOn": ["lint", "^test"],
+      "cache": true,
+      "executor": "@nx/jest:jest",
+      "outputs": ["{workspaceRoot}/results/{projectName}/coverage"],
+      "options": {
+        "codeCoverage": true,
+        "jestConfig": "{projectRoot}/jest.config.ts",
+        "passWithNoTests": true
+      }
+    },
+    "build": {
+      "executor": "@nx/esbuild:esbuild",
+      "outputs": ["{options.outputPath}"],
+      "defaultConfiguration": "production",
+      "options": {
+        "platform": "node",
+        "outputPath": "dist/{projectName}",
+        "format": ["cjs"],
+        "bundle": false,
+        "main": "{projectRoot}/src/main.ts",
+        "tsConfig": "{projectRoot}/tsconfig.app.json",
+        "assets": ["{projectRoot}/src/assets"],
+        "generatePackageJson": true,
+        "esbuildOptions": {
+          "sourcemap": true,
+          "outExtension": {
+            ".js": ".js"
+          }
+        }
       },
       "configurations": {
-        "development": {
-          "args": ["node-env=development"]
+        "development": {},
+        "production": {
+          "esbuildOptions": {
+            "sourcemap": false,
+            "outExtension": {
+              ".js": ".js"
+            }
+          }
         }
       }
     },
@@ -33,11 +76,6 @@
         "production": {
           "buildTarget": "api:build:production"
         }
-      }
-    },
-    "test": {
-      "options": {
-        "passWithNoTests": true
       }
     }
   }

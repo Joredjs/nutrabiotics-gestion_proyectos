@@ -7,13 +7,13 @@ import { UsersService } from '../../users/users.service';
 @Injectable()
 export class JwtStrategy extends PassportStrategy(Strategy) {
   constructor(
-    private configService: ConfigService,
-    private usersService: UsersService,
+    private readonly configService: ConfigService,
+    private readonly usersService: UsersService
   ) {
     super({
       jwtFromRequest: ExtractJwt.fromAuthHeaderAsBearerToken(),
       ignoreExpiration: false,
-      secretOrKey: configService.get('JWT_SECRET', 'jwt-secret-dev'),
+      secretOrKey: configService?.get('JWT_SECRET') || 'jwt-secret-dev',
     });
   }
 
