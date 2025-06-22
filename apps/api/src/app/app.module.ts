@@ -1,10 +1,10 @@
 import { Module } from '@nestjs/common';
 import { ConfigModule } from '@nestjs/config';
-import { AuthModule } from './auth/auth.module';
+import { DatabaseModule } from './db/db.module';
 import { UsersModule } from './users/users.module';
+import { AuthModule } from './auth/auth.module';
 import { ProjectsModule } from './projects/projects.module';
 import { TasksModule } from './tasks/tasks.module';
-import { DatabaseModule } from './db/db.module';
 
 @Module({
   imports: [
@@ -19,4 +19,8 @@ import { DatabaseModule } from './db/db.module';
     TasksModule,
   ],
 })
-export class AppModule {}
+export class AppModule {
+  constructor() {
+    console.log('AppModule inicializado');
+  }
+}

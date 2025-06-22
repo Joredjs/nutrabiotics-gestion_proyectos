@@ -8,17 +8,13 @@ import {
   HttpCode,
   HttpStatus,
 } from '@nestjs/common';
-import {
-  ApiTags,
-  ApiOperation,
-  ApiResponse,
-  ApiBearerAuth,
-} from '@nestjs/swagger';
+import { ApiTags, ApiOperation, ApiBearerAuth } from '@nestjs/swagger';
 import { AuthService } from './auth.service';
 import { JwtAuthGuard } from './guards/jwt-auth.guard';
+import { LoginDto } from './dto/login.dto';
+import { RegisterDto } from './dto/register.dto';
+import { RefreshTokenDto } from './dto/refresh-token.dto';
 import {
-  LoginDto,
-  RegisterDto,
   ApiResponse as ApiResponseType,
   AuthUser,
   User,
@@ -27,14 +23,19 @@ import {
 @ApiTags('Autenticación')
 @Controller('auth')
 export class AuthController {
-  constructor(private authService: AuthService) {}
+  constructor(private readonly authService: AuthService) {
+    console.log('AuthController inicializado',
+      authService
+    );
+    console.log('AuthService disponible:', !!this.authService);
+  }
 
   @Post('login')
   @HttpCode(HttpStatus.OK)
   @ApiOperation({ summary: 'Inicio de sesión' })
-  @ApiResponse({ status: 200, description: 'Inicio de sesión correcto' })
-  @ApiResponse({ status: 401, description: 'Credenciales incorrectas' })
   async login(@Body() loginDto: LoginDto): Promise<ApiResponseType<AuthUser>> {
+    console.log('AuthController.login llamado para:', loginDto.email);
+
     const result = await this.authService.login(loginDto);
 
     return {
@@ -46,8 +47,6 @@ export class AuthController {
 
   @Post('register')
   @ApiOperation({ summary: 'Registro de usuario' })
-  @ApiResponse({ status: 201, description: 'Registro de usuario correcto' })
-  @ApiResponse({ status: 409, description: 'El usuario ya existe' })
   async register(
     @Body() registerDto: RegisterDto
   ): Promise<ApiResponseType<AuthUser>> {
@@ -64,11 +63,6 @@ export class AuthController {
   @UseGuards(JwtAuthGuard)
   @ApiBearerAuth()
   @ApiOperation({ summary: 'Obtener el perfil de usuario' })
-  @ApiResponse({
-    status: 200,
-    description: 'Perfil de usuario obtenido correctamente',
-  })
-  @ApiResponse({ status: 401, description: 'Petición no autorizada' })
   async getProfile(@Request() req): Promise<ApiResponseType<User>> {
     return {
       success: true,
@@ -79,13 +73,13 @@ export class AuthController {
 
   @Post('refresh')
   @HttpCode(HttpStatus.OK)
-  @ApiOperation({ summary: 'Actualiza el access token' })
-  @ApiResponse({ status: 200, description: 'Token actualizado correctamente' })
-  @ApiResponse({ status: 401, description: 'refresh token inválido' })
+  @ApiOperation({ summary: 'Actualizar access token' })
   async refresh(
-    @Body('refreshToken') refreshToken: string
+    @Body() refreshTokenDto: RefreshTokenDto
   ): Promise<ApiResponseType<any>> {
-    const tokens = await this.authService.refreshTokens(refreshToken);
+    const tokens = await this.authService.refreshTokens(
+      refreshTokenDto.refreshToken
+    );
 
     return {
       success: true,
@@ -99,12 +93,11 @@ export class AuthController {
   @HttpCode(HttpStatus.OK)
   @ApiBearerAuth()
   @ApiOperation({ summary: 'Cerrar sesión' })
-  @ApiResponse({ status: 200, description: 'Sesión cerrada exitosamente' })
   async logout(
     @Request() req,
-    @Body('refreshToken') refreshToken: string
+    @Body() refreshTokenDto: RefreshTokenDto
   ): Promise<ApiResponseType<null>> {
-    await this.authService.logout(req.user.id, refreshToken);
+    await this.authService.logout(req.user.id, refreshTokenDto.refreshToken);
 
     return {
       success: true,

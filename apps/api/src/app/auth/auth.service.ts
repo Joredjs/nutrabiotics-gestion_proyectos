@@ -1,39 +1,59 @@
-import { Injectable, UnauthorizedException, ConflictException } from '@nestjs/common';
+import {
+  Injectable,
+  UnauthorizedException,
+  ConflictException,
+  Inject,
+} from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
 import { ConfigService } from '@nestjs/config';
 import * as bcrypt from 'bcryptjs';
-import { PrismaService } from '../db/prisma.service';
-import { UsersService } from '../users/users.service';
+import { LoginDto } from './dto/login.dto';
+import { RegisterDto } from './dto/register.dto';
+import { IUserRepository } from '../common/interfaces/user-repository.interface';
+import { IAuthRepository } from '../common/interfaces/auth-repository.interface';
+import { REPOSITORY_TOKENS } from '../repositories/repository.tokens';
 import {
-  LoginDto,
-  RegisterDto,
   AuthTokens,
   AuthUser,
   User,
-  CreateUserDto,
+  UserRole,
 } from '@nutrabiotics-system/shared-types';
 
 @Injectable()
 export class AuthService {
   constructor(
-    private prisma: PrismaService,
-    private jwtService: JwtService,
-    private configService: ConfigService,
-    private usersService: UsersService
-  ) {}
+
+    @Inject(REPOSITORY_TOKENS.USER_REPOSITORY)
+    private readonly userRepository: IUserRepository,
+
+    @Inject(REPOSITORY_TOKENS.AUTH_REPOSITORY)
+    private readonly authRepository: IAuthRepository,
+
+    private readonly jwtService: JwtService,
+    private readonly configService: ConfigService
+  ) {
+    console.log('AuthService inicializado');
+  }
 
   async validateUser(email: string, password: string): Promise<User | null> {
-    const user = await this.usersService.findByEmail(email);
+    console.log('validando usuario:', email);
+
+    const user = await this.userRepository.findByEmail(email);
+    console.log('usuario encontrado:', !!user);
 
     if (user && (await bcrypt.compare(password, user.password))) {
       const { password: _, ...result } = user;
+      console.log('credenciales válidas para:', email);
       return result as User;
     }
 
+    console.log('credenciales inválidas para:', email);
     return null;
   }
 
   async login(loginDto: LoginDto): Promise<AuthUser> {
+    console.log('AuthService.login llamado para:', loginDto.email);
+
     const user = await this.validateUser(loginDto.email, loginDto.password);
 
     if (!user) {
@@ -44,10 +64,17 @@ export class AuthService {
       throw new UnauthorizedException('El usuario no está activo');
     }
 
-    await this.usersService.updateLastLogin(user.id);
+    await this.userRepository.updateLastLogin(user.id);
 
     const tokens = await this.generateTokens(user.id, user.email);
-    await this.storeRefreshToken(user.id, tokens.refreshToken);
+
+    await this.authRepository.storeRefreshToken(
+      user.id,
+      tokens.refreshToken,
+      this.getRefreshTokenExpiration()
+    );
+
+    console.log('login exitoso para usuario:', user.email);
 
     return {
       user,
@@ -56,11 +83,15 @@ export class AuthService {
   }
 
   async register(registerDto: RegisterDto): Promise<AuthUser> {
+    console.log('registrando usuario:', registerDto.email);
+
     if (registerDto.password !== registerDto.confirmPassword) {
       throw new ConflictException('Las contraseñas no coinciden');
     }
 
-    const existingUser = await this.usersService.findByEmail(registerDto.email);
+    const existingUser = await this.userRepository.findByEmail(
+      registerDto.email
+    );
 
     if (existingUser) {
       throw new ConflictException(
@@ -70,16 +101,22 @@ export class AuthService {
 
     const hashedPassword = await bcrypt.hash(registerDto.password, 12);
 
-    const userData = {
+    const user = await this.userRepository.create({
       name: registerDto.name,
       email: registerDto.email,
       password: hashedPassword,
-      role: 'DEVELOPER' as const,
-    } as CreateUserDto;
+      role: UserRole.DEVELOPER,
+    });
 
-    const user = await this.usersService.create(userData);
     const tokens = await this.generateTokens(user.id, user.email);
-    await this.storeRefreshToken(user.id, tokens.refreshToken);
+
+    await this.authRepository.storeRefreshToken(
+      user.id,
+      tokens.refreshToken,
+      this.getRefreshTokenExpiration()
+    );
+
+    console.log('usuario registrado exitosamente:', user.email);
 
     return {
       user: user as User,
@@ -96,21 +133,23 @@ export class AuthService {
         ),
       });
 
-      const storedToken = await this.prisma.refreshToken.findUnique({
-        where: { token: refreshToken },
-        include: { user: true },
-      });
+      const storedToken = await this.authRepository.findRefreshToken(
+        refreshToken
+      );
 
       if (!storedToken || storedToken.expiresAt < new Date()) {
         throw new UnauthorizedException('Refresh token expirado o no válido');
       }
 
-      await this.prisma.refreshToken.delete({
-        where: { id: storedToken.id },
-      });
+      await this.authRepository.deleteRefreshToken(storedToken.id);
 
       const tokens = await this.generateTokens(payload.sub, payload.email);
-      await this.storeRefreshToken(payload.sub, tokens.refreshToken);
+
+      await this.authRepository.storeRefreshToken(
+        payload.sub,
+        tokens.refreshToken,
+        this.getRefreshTokenExpiration()
+      );
 
       return tokens;
     } catch {
@@ -119,18 +158,11 @@ export class AuthService {
   }
 
   async logout(userId: string, refreshToken: string): Promise<void> {
-    await this.prisma.refreshToken.deleteMany({
-      where: {
-        userId,
-        token: refreshToken,
-      },
-    });
+    await this.authRepository.deleteUserRefreshTokens(userId, refreshToken);
   }
 
   async logoutAll(userId: string): Promise<void> {
-    await this.prisma.refreshToken.deleteMany({
-      where: { userId },
-    });
+    await this.authRepository.deleteAllRefreshTokens(userId);
   }
 
   private async generateTokens(
@@ -159,19 +191,9 @@ export class AuthService {
     };
   }
 
-  private async storeRefreshToken(
-    userId: string,
-    refreshToken: string
-  ): Promise<void> {
+  private getRefreshTokenExpiration(): Date {
     const expiresAt = new Date();
-    expiresAt.setDate(expiresAt.getDate() + 1);
-
-    await this.prisma.refreshToken.create({
-      data: {
-        token: refreshToken,
-        userId,
-        expiresAt,
-      },
-    });
+    expiresAt.setDate(expiresAt.getDate() + 7);
+    return expiresAt;
   }
 }

@@ -3,6 +3,7 @@ import { ValidationPipe, Logger } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { SwaggerModule, DocumentBuilder } from '@nestjs/swagger';
 import { AppModule } from './app/app.module';
+import { HttpExceptionFilter } from './app/common/filters/http-exception.filter';
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
@@ -19,27 +20,42 @@ async function bootstrap() {
     credentials: true,
   });
 
-  // pipe de validación global
+  // Filtro global de excepciones
+  app.useGlobalFilters(new HttpExceptionFilter());
+
+  // Pipe de validación global
   app.useGlobalPipes(
     new ValidationPipe({
       whitelist: true,
       forbidNonWhitelisted: true,
       transform: true,
       disableErrorMessages: false,
+      validationError: {
+        target: false,
+        value: false, 
+      },
     })
   );
 
   // Se crea la documentación Swagger solo en desarrollo
   if (configService.get('NODE_ENV') !== 'production') {
     const config = new DocumentBuilder()
-      .setTitle('API Gestion de Proyectos - Nutrabiotics')
-      .setDescription('Api para la gestión de proyectos, tareas y usuarios')
+      .setTitle('API Gestión de Proyectos - Nutrabiotics')
+      .setDescription('API para la gestión de proyectos, tareas y usuarios')
       .setVersion('1.0')
       .addBearerAuth()
+      .addTag('Autenticación', 'Endpoints de autenticación y autorización')
+      .addTag('Users', 'Gestión de usuarios')
+      .addTag('Proyectos', 'Gestión de proyectos')
+      .addTag('Tasks', 'Gestión de tareas')
       .build();
 
     const document = SwaggerModule.createDocument(app, config);
-    SwaggerModule.setup('api/docs', app, document);
+    SwaggerModule.setup('api/docs', app, document, {
+      swaggerOptions: {
+        persistAuthorization: true,
+      },
+    });
   }
 
   const port = configService.get('PORT', 3333);
@@ -53,4 +69,7 @@ async function bootstrap() {
   );
 }
 
-bootstrap();
+bootstrap().catch(error => {
+  console.error('error al iniciar la aplicación:', error);
+  process.exit(1);
+});
