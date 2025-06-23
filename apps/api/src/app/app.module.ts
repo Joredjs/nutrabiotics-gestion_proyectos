@@ -1,0 +1,26 @@
+import { Module } from '@nestjs/common';
+import { ConfigModule } from '@nestjs/config';
+import { DatabaseModule } from './db/db.module';
+import { UsersModule } from './users/users.module';
+import { AuthModule } from './auth/auth.module';
+import { ProjectsModule } from './projects/projects.module';
+import { TasksModule } from './tasks/tasks.module';
+
+@Module({
+  imports: [
+    ConfigModule.forRoot({
+      isGlobal: true,
+      envFilePath: '.env',
+    }),
+    DatabaseModule,
+    AuthModule,
+    UsersModule,
+    ProjectsModule,
+    TasksModule,
+  ],
+})
+export class AppModule {
+  constructor() {
+    console.log('AppModule inicializado');
+  }
+}

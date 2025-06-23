@@ -1,0 +1,83 @@
+{
+  "name": "api",
+  "$schema": "../../node_modules/nx/schemas/project-schema.json",
+  "sourceRoot": "apps/api/src",
+  "projectType": "application",
+  "tags": [],
+  "targets": {
+    "lint": {
+      "dependsOn": ["^lint"],
+      "cache": true,
+      "executor": "@nx/eslint:lint",
+      "outputs": ["{options.outputFile}"],
+      "options": {
+        "lintFilePatterns": ["{projectRoot}/src/**/*.ts"],
+        "fix": true,
+        "outputFile": "{workspaceRoot}/results/{projectName}/lint.html",
+        "format": "html"
+      }
+    },
+    "test": {
+      "dependsOn": ["lint", "^test"],
+      "cache": true,
+      "executor": "@nx/jest:jest",
+      "outputs": ["{workspaceRoot}/results/{projectName}/coverage"],
+      "options": {
+        "codeCoverage": true,
+        "jestConfig": "{projectRoot}/jest.config.ts",
+        "passWithNoTests": true
+      }
+    },
+    "build": {
+      "dependsOn": ["lint", "^build"],
+      "executor": "@nx/esbuild:esbuild",
+      "outputs": ["{options.outputPath}"],
+      "defaultConfiguration": "production",
+      "options": {
+        "platform": "node",
+        "outputPath": "dist/{projectName}",
+        "format": ["cjs"],
+        "bundle": false,
+        "main": "{projectRoot}/src/main.ts",
+        "tsConfig": "{projectRoot}/tsconfig.app.json",
+        "assets": ["{projectRoot}/src/assets"],
+        "generatePackageJson": true,
+        "esbuildOptions": {
+          "sourcemap": true,
+          "outExtension": {
+            ".js": ".js"
+          }
+        }
+      },
+      "configurations": {
+        "development": {},
+        "production": {
+          "esbuildOptions": {
+            "sourcemap": false,
+            "outExtension": {
+              ".js": ".js"
+            }
+          }
+        }
+      }
+    },
+    "serve": {
+      "continuous": true,
+      "executor": "@nx/js:node",
+      "defaultConfiguration": "development",
+      "dependsOn": ["build"],
+      "options": {
+        "buildTarget": "api:build",
+        "runBuildTargetDependencies": false
+      },
+      "configurations": {
+        "development": {
+          "buildTarget": "api:build:development"
+        },
+        "production": {
+          "buildTarget": "api:build:production"
+        }
+      }
+    }
+  }
+}

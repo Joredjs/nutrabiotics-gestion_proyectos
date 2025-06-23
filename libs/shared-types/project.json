@@ -1,0 +1,28 @@
+{
+  "name": "shared-types",
+  "$schema": "../../node_modules/nx/schemas/project-schema.json",
+  "sourceRoot": "libs/shared-types/src",
+  "projectType": "library",
+  "tags": [],
+  "// targets": "to see all targets run: nx show project shared-types --web",
+  "targets": {
+    "lint": {
+      "executor": "@nx/eslint:lint",
+      "outputs": ["{options.outputFile}"],
+      "options": {
+        "lintFilePatterns": ["{projectRoot}/src/**/*.ts"],
+        "fix": true,
+        "outputFile": "{workspaceRoot}/results/{projectName}/lint.html",
+        "format": "html"
+      }
+    },
+    "test": {
+      "executor": "@nx/jest:jest",
+      "outputs": ["{workspaceRoot}/results/{projectName}/coverage"],
+      "options": {
+        "jestConfig": "libs/shared-types/jest.config.ts",
+        "passWithNoTests": true
+      }
+    }
+  }
+}
