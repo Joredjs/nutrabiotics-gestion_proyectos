@@ -10,12 +10,15 @@
       "executor": "@nx/eslint:lint",
       "outputs": ["{options.outputFile}"],
       "options": {
-        "lintFilePatterns": ["libs/shared-types/**/*.ts"]
+        "lintFilePatterns": ["{projectRoot}/src/**/*.ts"],
+        "fix": true,
+        "outputFile": "{workspaceRoot}/results/{projectName}/lint.html",
+        "format": "html"
       }
     },
     "test": {
       "executor": "@nx/jest:jest",
-      "outputs": ["{workspaceRoot}/coverage/{projectRoot}"],
+      "outputs": ["{workspaceRoot}/results/{projectName}/coverage"],
       "options": {
         "jestConfig": "libs/shared-types/jest.config.ts",
         "passWithNoTests": true

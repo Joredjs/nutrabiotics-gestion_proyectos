@@ -49,3 +49,5 @@ vitest.config.*.timestamp*
 
 /generated/prisma
 .env
+
+results

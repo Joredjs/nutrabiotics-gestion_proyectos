@@ -29,6 +29,7 @@
       }
     },
     "build": {
+      "dependsOn": ["lint", "^build"],
       "executor": "@nx/esbuild:esbuild",
       "outputs": ["{options.outputPath}"],
       "defaultConfiguration": "production",

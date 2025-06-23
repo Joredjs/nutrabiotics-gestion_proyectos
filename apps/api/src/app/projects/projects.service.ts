@@ -7,7 +7,6 @@ import {
   ProjectFilters,
   UserRole,
   User,
-  Project,
 } from '@nutrabiotics-system/shared-types';
 import { calculatePagination } from '@nutrabiotics-system/shared-utils';
 
